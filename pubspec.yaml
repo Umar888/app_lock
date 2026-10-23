@@ -1,0 +1,38 @@
+name: app_lock
+description: All-in-one app lock. Biometrics with a PIN fallback, lockout after wrong attempts, lock on background or timeout, and app switcher privacy.
+version: 0.1.0
+repository: https://github.com/Umar888/app_lock
+issue_tracker: https://github.com/Umar888/app_lock/issues
+topics:
+  - biometrics
+  - security
+  - authentication
+  - lock-screen
+  - privacy
+
+environment:
+  sdk: ^3.10.0
+  flutter: '>=3.38.0'
+
+dependencies:
+  cryptography: ^2.9.0
+  flutter:
+    sdk: flutter
+  local_auth: ^3.0.2
+  secure_vault: ^0.2.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: dev.umarghaffar.app_lock
+        pluginClass: AppLockPlugin
+      ios:
+        pluginClass: AppLockPlugin
+
