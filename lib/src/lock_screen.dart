@@ -46,7 +46,8 @@ class _LockScreenState extends State<LockScreen> {
   String? _error;
   bool _checking = false;
   Timer? _ticker;
-  AppLifecycleListener? _waitForResume;
+  late final AppLifecycleListener _lifecycle;
+  bool _promptOnResume = false;
 
   AppLockController get _controller => widget.controller;
 
@@ -55,6 +56,17 @@ class _LockScreenState extends State<LockScreen> {
     super.initState();
     _controller.addListener(_onControllerChanged);
     _syncTicker();
+    // the Face ID prompt only makes the app inactive, so prompting again on
+    // every resume would loop after a cancel. only re-prompt after a real
+    // trip to the background (onShow), once the app is active again
+    _lifecycle = AppLifecycleListener(
+      onShow: () => _promptOnResume = true,
+      onResume: () {
+        if (!_promptOnResume) return;
+        _promptOnResume = false;
+        _biometrics();
+      },
+    );
     if (_controller.canUseBiometrics) _promptWhenVisible();
   }
 
@@ -62,7 +74,7 @@ class _LockScreenState extends State<LockScreen> {
   void dispose() {
     _controller.removeListener(_onControllerChanged);
     _ticker?.cancel();
-    _waitForResume?.dispose();
+    _lifecycle.dispose();
     super.dispose();
   }
 
@@ -81,14 +93,7 @@ class _LockScreenState extends State<LockScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) => _biometrics());
       return;
     }
-    _waitForResume?.dispose();
-    _waitForResume = AppLifecycleListener(
-      onResume: () {
-        _waitForResume?.dispose();
-        _waitForResume = null;
-        _biometrics();
-      },
-    );
+    _promptOnResume = true;
   }
 
   void _syncTicker() {
@@ -109,7 +114,12 @@ class _LockScreenState extends State<LockScreen> {
   }
 
   Future<void> _biometrics() async {
-    if (!mounted || !_controller.isLocked) return;
+    if (!mounted ||
+        !_controller.isLocked ||
+        !_controller.canUseBiometrics ||
+        _controller.isAuthenticating) {
+      return;
+    }
     final result = await _controller.unlockWithBiometrics();
     if (!mounted) return;
     if (result == BiometricResult.failed) {

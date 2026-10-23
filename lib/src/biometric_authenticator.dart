@@ -1,4 +1,6 @@
 import 'package:local_auth/local_auth.dart';
+import 'package:local_auth_android/local_auth_android.dart';
+import 'package:local_auth_darwin/local_auth_darwin.dart';
 
 import 'lock_types.dart';
 
@@ -21,10 +23,19 @@ abstract interface class BiometricAuthenticator {
 /// is never offered.
 class LocalAuthBiometrics implements BiometricAuthenticator {
   /// Creates an authenticator, optionally around an existing [auth].
-  LocalAuthBiometrics({LocalAuthentication? auth})
-    : _auth = auth ?? LocalAuthentication();
+  ///
+  /// [fallbackTitle] labels the button that leaves the system prompt for the
+  /// PIN: the "Enter Password" button iOS shows after a failed attempt, and
+  /// the negative button of Android's prompt.
+  LocalAuthBiometrics({
+    LocalAuthentication? auth,
+    this.fallbackTitle = 'Use PIN',
+  }) : _auth = auth ?? LocalAuthentication();
 
   final LocalAuthentication _auth;
+
+  /// Label for the system prompt's way back to the PIN.
+  final String fallbackTitle;
 
   @override
   Future<BiometricKind?> availableKind() async {
@@ -49,6 +60,10 @@ class LocalAuthBiometrics implements BiometricAuthenticator {
       final ok = await _auth.authenticate(
         localizedReason: reason,
         biometricOnly: true,
+        authMessages: [
+          IOSAuthMessages(localizedFallbackTitle: fallbackTitle),
+          AndroidAuthMessages(cancelButton: fallbackTitle),
+        ],
       );
       return ok ? BiometricResult.success : BiometricResult.failed;
     } on LocalAuthException catch (e) {

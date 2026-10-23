@@ -4,3 +4,6 @@
   PIN fallback, escalating lockouts that survive restarts, lock on launch,
   on background or after a timeout, app switcher privacy on iOS and
   Android, a built-in lock screen, PIN setup flow and translatable labels.
+- Android and iOS only.
+- Biometrics re-prompt when the user returns to a locked app, and the
+  system prompt's fallback button reads "Use PIN".

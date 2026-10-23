@@ -10,6 +10,11 @@ topics:
   - lock-screen
   - privacy
 
+# mobile only: the lock, biometrics and app switcher privacy target phones
+platforms:
+  android:
+  ios:
+
 environment:
   sdk: ^3.10.0
   flutter: '>=3.38.0'
@@ -19,6 +24,8 @@ dependencies:
   flutter:
     sdk: flutter
   local_auth: ^3.0.2
+  local_auth_android: ^2.0.0
+  local_auth_darwin: ^2.0.0
   secure_vault: ^0.2.0
 
 dev_dependencies:

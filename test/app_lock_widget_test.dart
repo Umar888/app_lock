@@ -187,6 +187,39 @@ void main() {
     expect(controller.isLocked, isFalse);
   });
 
+  testWidgets('re-prompts after a trip to the background, not after the '
+      'prompt itself', (tester) async {
+    phoneScreen(tester);
+    biometrics.kind = BiometricKind.face;
+    final setup = make();
+    await setup.init();
+    await setup.setPin('1357');
+    await setup.setBiometricsEnabled(true);
+    setup.dispose();
+    final controller = make();
+    addTearDown(controller.dispose);
+    await controller.init();
+    biometrics.prompts = 0;
+    biometrics.next = BiometricResult.cancelled;
+
+    await tester.pumpWidget(app(controller));
+    await tester.pumpAndSettle();
+    expect(biometrics.prompts, 1);
+
+    // dismissing the system prompt is just inactive -> resumed
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pumpAndSettle();
+    expect(biometrics.prompts, 1);
+
+    // leaving and coming back asks again
+    await goBackground(tester);
+    await goForeground(tester);
+    await tester.pumpAndSettle();
+    expect(biometrics.prompts, 2);
+    expect(controller.isLocked, isTrue);
+  });
+
   testWidgets('locks again when the app goes to the background', (
     tester,
   ) async {

@@ -1,8 +1,9 @@
 # app_lock
 
-An all-in-one app lock for Flutter. Biometrics with a PIN fallback, lockout
-after wrong attempts, lock on background or after a timeout, and content
-hidden in the app switcher, behind a polished lock screen.
+An all-in-one app lock for Flutter on **Android and iOS**. Biometrics with a
+PIN fallback, lockout after wrong attempts, lock on background or after a
+timeout, and content hidden in the app switcher, behind a polished lock
+screen.
 
 ![app_lock demo](https://raw.githubusercontent.com/Umar888/app_lock/main/doc/demo.gif)
 
@@ -32,6 +33,10 @@ controller and one widget:
 - **Hard to get around.** While locked, the app underneath can't be tapped,
   focused or read by screen readers, its animations pause, and Android's
   back button does nothing.
+- **Re-prompts when the user comes back.** If they leave while the system
+  prompt is up, iOS and Android cancel it. app_lock asks again on return
+  instead of leaving a dead lock screen, without looping after a plain
+  cancel.
 - **A lock screen worth showing.** It has a blurred backdrop and PIN dots
   that shake on a wrong entry. It prompts for biometrics on its own and
   counts down during a lockout. Every string can be translated, and you can
@@ -110,9 +115,15 @@ AppLockController(
   ),
   biometricReason: 'Unlock to continue',
   store: VaultLockStore(),           // or your own LockStore
-  biometrics: LocalAuthBiometrics(), // or your own BiometricAuthenticator
+  biometrics: LocalAuthBiometrics(   // or your own BiometricAuthenticator
+    fallbackTitle: 'Use PIN',          // system prompt button back to the PIN
+  ),
 );
 ```
+
+Android only reports a biometric's strength class, not whether it's a
+fingerprint or a face, so `biometricKind` is `BiometricKind.generic` there.
+iOS reports `face` or `fingerprint`.
 
 | Privacy mode | iOS | Android 13+ | Android 12 and older |
 | --- | --- | --- | --- |
@@ -166,5 +177,13 @@ AppLock(
 ## Example
 
 `example/` is a small banking app. It shows PIN setup, biometrics, the lock
-timeout, privacy modes and a "Lock now" button. It also contains an
-integration test that drives the real lock screen.
+timeout, privacy modes and a "Lock now" button.
+
+It also ships two on-device test suites:
+
+- `integration_test/app_lock_flow_test.dart` drives the real lock screen:
+  PIN setup, a wrong PIN, unlocking, and locking again on background.
+- `integration_test/biometrics_test.dart` runs against the real platform
+  biometric stack. The scripts in `tool/` play the simulator / emulator
+  sensor (Face ID, Touch ID, Android fingerprint), sending a no-match, a
+  match, and a "user left mid-prompt" case.
